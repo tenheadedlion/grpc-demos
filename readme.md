@@ -1,6 +1,6 @@
 ## 设计
 
-两模块 A，B 之间通信，其中 A 用 cpp, B 用 go
+两模块 A，B 之间通信，其中 A 用 C++, B 用 Go
 
 ## 准备
 
@@ -40,29 +40,43 @@ cmake ../..
 make -j
 ```
 
-### 下载 grpc-go
+### 运行 Go
 
-git clone https://github.com/grpc/grpc-go
-
-将以下设置加到 .zshrc 或 .bashrc 设置 go 代理
 
 ```bash
-export GO111MODULE=on
-export GOPROXY=https://goproxy.cn
+
+pushd examples/go_greeter/internal
+protoc --go_out=. --go_opt=paths=source_relative \
+    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+    helloworld/helloworld.proto
+popd
+pushd example/go_greeter
+go run cmd/helloworld/greeter_server/main.go
 ```
 
-将依赖下载至本地
+## 测试
 
-```bash
-go get github.com/golang/protobuf/protoc-gen-go \
-         google.golang.org/grpc/cmd/protoc-gen-go-grpc
+模块 A 作为客户端
+
+```
+➜  build git:(master) ./greeter_client
+Greeter received: Hello world
 ```
 
+模块 B 收到消息：
 
+```
+➜  go_greeter git:(master) ✗ go run cmd/helloworld/greeter_server/main.go 
+go: downloading google.golang.org/grpc v0.0.0-20201014215113-7b167fd6eca1
+go: downloading google.golang.org/protobuf v1.25.0
+go: downloading google.golang.org/genproto v0.0.0-20200806141610-86f49bd18e98
+go: downloading golang.org/x/net v0.0.0-20200707034311-ab3426394381
+go: downloading golang.org/x/sys v0.0.0-20200803210538-64077c9b5642
+go: downloading golang.org/x/text v0.3.3
+2020/10/15 12:53:43 Received: world
+```
 
+## .proto 文件
 
-
-
-
-
+examples/cpp/protos/helloworld.proto 和 examples/go_greeter/internal/helloworld/helloworld.proto 一样, 可以用 git 管理
 
