@@ -23,6 +23,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"time"
 
 	pb "a/internal/helloworld"
 
@@ -38,9 +39,12 @@ type server struct {
 	pb.UnimplementedGreeterServer
 }
 
+var reqcnt = 0
+
 // SayHello implements helloworld.GreeterServer
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	log.Printf("Received: %v", in.GetName())
+	reqcnt += 1
+	//log.Printf("Received: %v", in.GetName())
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
 
@@ -51,6 +55,22 @@ func main() {
 	}
 	s := grpc.NewServer()
 	pb.RegisterGreeterServer(s, &server{})
+
+	ticker := time.NewTicker(10 * time.Second)
+	quit := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				log.Printf("[report] received %d requests in last 10 sec.", reqcnt)
+				reqcnt = 0
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
